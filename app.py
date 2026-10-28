@@ -554,8 +554,8 @@ with bb:
     st.download_button("💾Save Project (.gedit)", data=save_project_bytes(proj()),
         file_name=f"{pname}.gedit", mime="application/json", key="save_banner")
 
-tab1,tab2,tab3,tab4,tab5,tab6 = st.tabs([
-    "🔬 Design Primers","🗺️ Vector Map","📊 Progress Tracker","🧫 Gel Upload","🧪 Control Primers","📥 Export"])
+tab1,tab2,tab5,tab3,tab4,tab6 = st.tabs([
+    "🔬 Design Primers","🗺️ Vector Map","🧪 Control Primers","📊 Progress Tracker","🧫 Gel Upload","📥 Export"])
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 1 — Design Primers
