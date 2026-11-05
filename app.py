@@ -883,8 +883,9 @@ with tab4:
             st.success("✅ Run saved! Remember to 💾 Save Project."); st.rerun()
 
         if g_p.get('status') in ('Failed','Overlap Violation'):
-            st.warning(f"⚠️ {amp_label(g_p)} is marked {g_p['status']} — redesign available below.")
-            _redesign_ui(g_p)
+            st.warning(f"⚠️ {amp_label(g_p)} is marked {g_p['status']} — "
+                       "open the 📊 Progress Tracker tab and expand "
+                       f"“Details & Redesign — {amp_label(g_p)}” to redesign it.")
 
         st.markdown("---")
         st.markdown("#### 🗂️ PCR Run Archive")
@@ -995,7 +996,7 @@ with tab6:
 
     st.markdown("#### 💾 Save Project File")
     st.download_button("⬇️ Download .gedit project file", data=save_project_bytes(proj()),
-        file_name=f"{pname}.bsp", mime="application/json",
+        file_name=f"{pname}.gedit", mime="application/json",
         help="Complete project — open next session to resume.")
     st.caption("Contains everything: primers, gel images (embedded), PCR runs, control primers, redesign history.")
 
