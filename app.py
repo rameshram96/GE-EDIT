@@ -1,6 +1,6 @@
 
 import streamlit as st
-import os, sys, json
+import os, sys, json, base64
 import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -33,29 +33,32 @@ st.set_page_config(page_title="GE-EDIT", page_icon="🧬",
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 :root{
   --ink-900:#171A21; --ink-700:#3A404B; --ink-400:#7B8494;
   --line-200:#E1E4EA; --line-100:#EDEFF3;
   --surface-0:#FFFFFF; --surface-50:#F6F7F9;
-  --accent:#2E5FE8; --accent-tint:#EAF0FE; --accent-dark:#1F49C4;
+  --accent:#3F51B5; --accent-tint:#ECEEFA; --accent-dark:#2C3A8C;
   --success:#1F8A5F; --success-tint:#E7F5EE;
   --warning:#B4790F; --warning-tint:#FCF3E3;
   --danger:#B3392C;  --danger-tint:#FBEAE7;
   --violet:#6A4FA0;  --violet-tint:#F1ECFA;
   --neutral:#5B6472; --neutral-tint:#EEF0F3;
 }
+html,body,[class*="css"],.stApp,button,input,textarea,select{
+  font-family:'DM Serif Display',Georgia,serif !important;color:var(--ink-900);}
 
-html,body,[class*="css"]{font-family:'IBM Plex Sans','Segoe UI',Arial,sans-serif !important;color:var(--ink-900);}
 .stApp{background:var(--surface-50);}
 [data-testid="stSidebar"]{background:var(--surface-0);border-right:1px solid var(--line-200);}
 [data-testid="stSidebar"] *{color:var(--ink-900) !important;}
-
+/* Force the font on every text element, but keep icons and code intact */
+.stApp :where(*:not([data-testid="stIconMaterial"]):not(code):not(pre):not(.primer-code)){
+  font-family:'DM Serif Display',Georgia,serif !important;
+}
 /* ── Header: slim flat bar, not a filled color block ── */
 .main-header{background:var(--surface-0);border:1px solid var(--line-200);border-bottom:2px solid var(--ink-900);
-  border-radius:10px;padding:14px 20px;margin-bottom:14px;
-  display:flex;align-items:center;justify-content:space-between;}
+  border-radius:10px;padding:18px 20px 14px;margin-bottom:14px;
+  display:flex;flex-direction:column;align-items:center;text-align:center;}
 .main-header h1{color:var(--ink-900);font-size:1.35rem;font-weight:700;margin:0;letter-spacing:-.01em;}
 .main-header p{color:var(--ink-400);font-size:.82rem;margin:2px 0 0;}
 .active-proj-badge{background:var(--accent-tint);border:1px solid var(--accent);
@@ -65,6 +68,15 @@ html,body,[class*="css"]{font-family:'IBM Plex Sans','Segoe UI',Arial,sans-serif
 .home-box{background:var(--surface-0);border:1px solid var(--line-200);border-radius:10px;
   padding:20px 24px;margin-bottom:16px;}
 .home-box h3{color:var(--ink-900);margin:0 0 14px;font-size:1rem;font-weight:700;}
+
+/* ── Home page (two-column layout) ── */
+.home-title{display:flex;align-items:center;gap:8px;font-size:1rem;font-weight:700;
+  color:var(--ink-900);margin-bottom:10px;}
+.home-tag{background:var(--accent-tint);color:var(--accent-dark);border-radius:6px;
+  padding:2px 8px;font-size:11px;font-weight:700;letter-spacing:.04em;}
+.home-tag.alt{background:var(--neutral-tint);color:var(--ink-700);}
+.home-warn{background:var(--warning-tint);border-left:3px solid var(--warning);
+  padding:8px 14px;font-size:12.5px;color:var(--ink-900);margin-bottom:14px;}
 
 /* ── Slim project status strip ── */
 .proj-banner{background:var(--surface-0);border:1px solid var(--line-200);border-radius:8px;
@@ -142,7 +154,7 @@ st.markdown("""
 [data-testid="stSidebar"] { display: none; }
 [data-testid="collapsedControl"] { display: none; }
 
-/* Page links: centred, solid accent-blue button, white text */
+/* Page links: centred, solid accent button, white text */
 [data-testid="stPageLink"] { display: flex; justify-content: center; }
 [data-testid="stPageLink"] a,
 [data-testid="stPageLink-NavLink"] {
@@ -427,109 +439,123 @@ amplicons (A and B) have been designed to cover the full region with no gap.
 
 
 # ── Header ────────────────────────────────────────────────────────────────────
+def _logo_html(height=64):
+    """Logo from assets/logo.png (embedded), or the 🧬 emoji if the file is missing."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logo.png")
+    if os.path.exists(path):
+        with open(path, "rb") as f:
+            b64 = base64.b64encode(f.read()).decode()
+        return (f'<img src="data:image/png;base64,{b64}" alt="GE-EDIT logo" '
+                f'style="height:{height}px;margin-bottom:6px;">')
+    return f'<div style="font-size:{height - 16}px;line-height:1;margin-bottom:6px;">🧬</div>'
+
 def render_header():
-    p = st.session_state.get('project')
-    badge = (f'<div class="active-proj-badge">📂 {p["project_name"]} &nbsp;·&nbsp; {p["vector_length"]:,} bp</div>'
-             if p else "")
     st.markdown(f"""<div class="main-header">
-  <div><h1>🧬 GE-EDIT</h1>
-  <p>Overlapping PCR primer design · Progress monitoring · Exemption of the Genome Edited Plants</p></div>
-  {badge}</div>""", unsafe_allow_html=True)
+  {_logo_html(120)}
+  <h1>Genome Editing – Exemption Data & Inspection Tool (GE-EDIT)</h1>
+  <p>Overlapping PCR primer design · Progress monitoring · Exemption of the Genome Edited Plants</p>
+</div>""", unsafe_allow_html=True)
 render_header()
 
 # ══════════════════════════════════════════════════════════════════════════════
-# HOME
+# HOME  (two-column layout: Create new | Open saved)
 # ══════════════════════════════════════════════════════════════════════════════
 if 'project' not in st.session_state:
     st.markdown('<div class="section-header">Project Hub</div>', unsafe_allow_html=True)
-    st.markdown("""
-    <div class="split-warning">
-    ⚠️ <strong>No server-side saving:</strong> GE-EDIT keeps your project (primers, gel images,
-    run history) in temporary browser memory — nothing is saved automatically. If your session
-    disconnects, refreshes, or times out, unsaved changes are lost. Use <strong>💾 Save Project (.gedit)</strong>
-    frequently and re-upload it to resume work.
-        </div>""", unsafe_allow_html=True)
-    # Create New Project
-    st.markdown('<div class="home-box"><h3>🆕 Create New Project</h3>', unsafe_allow_html=True)
-    new_name = st.text_input("Project name", placeholder="e.g. pRGEB32_OsDEP1", key="new_name")
+    st.markdown(
+        '<div class="home-warn">⚠️ <strong>Browser session only:</strong> nothing is saved '
+        'automatically. If your session disconnects, refreshes, or times out, unsaved changes '
+        'are lost. Download <strong>💾 .gedit</strong> often and re-upload it to resume.'
+        '</div>', unsafe_allow_html=True)
 
-    input_mode = st.radio(
-        "Sequence input method",
-        ["📁Upload file", "📋 Paste sequence"],
-        horizontal=True, key="input_mode"
-    )
+    col_new, col_open = st.columns([3, 2], gap="large")
 
-    si = None
-    parse_error = None
+    # ── LEFT: Create New Project ─────────────────────────────────────────────
+    with col_new:
+        with st.container(border=True):
+            st.markdown('<div class="home-title"><span class="home-tag">NEW</span>'
+                        'Create new project</div>', unsafe_allow_html=True)
+            new_name = st.text_input("Project name", placeholder="e.g. pRGEB32_OsDEP1", key="new_name")
 
-    if input_mode == "📁Upload file":
-        new_file = st.file_uploader("Upload vector sequence (FASTA or GenBank)",
-                                     type=['fa','fasta','fna','gb','gbk','genbank'], key="new_file")
-        if new_file and new_name:
-            try:
-                content = new_file.read().decode('utf-8', errors='ignore')
-                fmt = detect_format(new_file.name)
-                si  = parse_sequence(content, fmt)
-            except Exception as e:
-                parse_error = str(e)
-        elif new_file and not new_name:
-            st.warning("⚠️Please enter a project name before creating.")
-    else:
-        pasted = st.text_area(
-            "Paste FASTA, GenBank, or raw sequence text",
-            height=180,
-            placeholder=(">MyPlasmid\nATGCGTACGT...\n\n"
-                         "— or paste full GenBank text (starting with 'LOCUS') —\n\n"
-                         "— or just paste the raw sequence letters —"),
-            key="pasted_seq"
-        )
-        if pasted.strip() and new_name:
-            try:
-                si = parse_pasted_sequence(pasted, new_name)
-            except Exception as e:
-                parse_error = str(e)
-        elif pasted.strip() and not new_name:
-            st.warning("⚠️Please enter a project name before creating.")
+            input_mode = st.radio(
+                "Sequence input method",
+                ["📁Upload file", "📋 Paste sequence"],
+                horizontal=True, key="input_mode"
+            )
 
-    if parse_error:
-        st.error(f"Parse error: {parse_error}")
+            si = None
+            parse_error = None
 
-    if si:
-        st.markdown(
-            '<div class="circ-note">🔁This vector will be treated as a <strong>circular '
-            'plasmid</strong> — the design step will make the last amplicon overlap '
-            'Amplicon 1 across the origin.</div>', unsafe_allow_html=True)
-        mc1,mc2,mc3 = st.columns(3)
-        mc1.markdown(f'<div class="metric-card"><div class="value">{si["length"]:,}</div><div class="label">Vector Length (bp)</div></div>', unsafe_allow_html=True)
-        mc2.markdown(f'<div class="metric-card"><div class="value">{len(si["features"])}</div><div class="label">Features</div></div>', unsafe_allow_html=True)
-        mc3.markdown(f'<div class="metric-card"><div class="value">{"Pasted" if input_mode=="📋 Paste sequence" else "File"}</div><div class="label">Source</div></div>', unsafe_allow_html=True)
-        st.success(f"✅Parsed: **{si['name']}** — {si['length']:,} bp")
-        if st.button("🚀Create Project", type="primary"):
-            p = new_project(new_name, si['name'], si['length'], si['sequence'], si.get('features',[]))
-            st.session_state['project']  = p
-            st.session_state['seq_info'] = si
-            st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+            if input_mode == "📁Upload file":
+                new_file = st.file_uploader("Upload vector sequence (FASTA or GenBank)",
+                                             type=['fa','fasta','fna','gb','gbk','genbank'], key="new_file")
+                if new_file and new_name:
+                    try:
+                        content = new_file.read().decode('utf-8', errors='ignore')
+                        fmt = detect_format(new_file.name)
+                        si  = parse_sequence(content, fmt)
+                    except Exception as e:
+                        parse_error = str(e)
+                elif new_file and not new_name:
+                    st.warning("⚠️Please enter a project name before creating.")
+            else:
+                pasted = st.text_area(
+                    "Paste FASTA, GenBank, or raw sequence text",
+                    height=180,
+                    placeholder=(">MyPlasmid\nATGCGTACGT...\n\n"
+                                 "— or paste full GenBank text (starting with 'LOCUS') —\n\n"
+                                 "— or just paste the raw sequence letters —"),
+                    key="pasted_seq"
+                )
+                if pasted.strip() and new_name:
+                    try:
+                        si = parse_pasted_sequence(pasted, new_name)
+                    except Exception as e:
+                        parse_error = str(e)
+                elif pasted.strip() and not new_name:
+                    st.warning("⚠️Please enter a project name before creating.")
 
-    # Open Existing Project
-    st.markdown("---")
-    st.markdown('<div class="home-box"><h3>📂Open Saved Project</h3>', unsafe_allow_html=True)
-    bsp_file = st.file_uploader("Upload a GE-EDIT project file (.gedit)", type=['gedit','json'], key="open_bsp")
-    if bsp_file:
-        try:
-            p  = load_project_bytes(bsp_file.read())
-            si = {'name':p['vector_name'],'sequence':p['vector_sequence'],
-                  'length':p['vector_length'],'features':p.get('vector_features',[])}
-            stats = get_project_stats(p)
-            st.success(f"✅ **{p['project_name']}** — {p['vector_length']:,} bp — "
-                       f"{stats['done']}/{stats['total']} amplicons done")
-            if st.button("📂Open Project", type="primary"):
-                st.session_state['project']  = p
-                st.session_state['seq_info'] = si
-                st.rerun()
-        except Exception as e:
-            st.error(f"Could not load file: {e}")
-    st.markdown('</div>', unsafe_allow_html=True)
+            if parse_error:
+                st.error(f"Parse error: {parse_error}")
+
+            if si:
+                st.markdown(
+                    '<div class="circ-note">🔁This vector will be treated as a <strong>circular '
+                    'plasmid</strong> — the design step will make the last amplicon overlap '
+                    'Amplicon 1 across the origin.</div>', unsafe_allow_html=True)
+                mc1, mc2, mc3 = st.columns(3)
+                mc1.markdown(f'<div class="metric-card"><div class="value">{si["length"]:,}</div><div class="label">Vector Length (bp)</div></div>', unsafe_allow_html=True)
+                mc2.markdown(f'<div class="metric-card"><div class="value">{len(si["features"])}</div><div class="label">Features</div></div>', unsafe_allow_html=True)
+                mc3.markdown(f'<div class="metric-card"><div class="value">{"Pasted" if input_mode=="📋 Paste sequence" else "File"}</div><div class="label">Source</div></div>', unsafe_allow_html=True)
+                st.success(f"✅Parsed: **{si['name']}** — {si['length']:,} bp")
+                if st.button("🚀Create Project", type="primary"):
+                    p = new_project(new_name, si['name'], si['length'], si['sequence'], si.get('features', []))
+                    st.session_state['project']  = p
+                    st.session_state['seq_info'] = si
+                    st.rerun()
+
+    # ── RIGHT: Open Saved Project ────────────────────────────────────────────
+    with col_open:
+        with st.container(border=True):
+            st.markdown('<div class="home-title"><span class="home-tag alt">RESUME</span>'
+                        'Open saved project</div>', unsafe_allow_html=True)
+            bsp_file = st.file_uploader("Upload a GE-EDIT project file (.gedit)",
+                                         type=['gedit','json'], key="open_bsp")
+            if bsp_file:
+                try:
+                    p  = load_project_bytes(bsp_file.read())
+                    si = {'name':p['vector_name'],'sequence':p['vector_sequence'],
+                          'length':p['vector_length'],'features':p.get('vector_features',[])}
+                    stats = get_project_stats(p)
+                    st.success(f"✅ **{p['project_name']}** — {p['vector_length']:,} bp — "
+                               f"{stats['done']}/{stats['total']} amplicons done")
+                    if st.button("📂Open Project", type="primary"):
+                        st.session_state['project']  = p
+                        st.session_state['seq_info'] = si
+                        st.rerun()
+                except Exception as e:
+                    st.error(f"Could not load file: {e}")
+
     footer(); st.stop()
 
 # ══════════════════════════════════════════════════════════════════════════════
