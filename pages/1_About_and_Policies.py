@@ -66,6 +66,20 @@ st.markdown("""
     background: #FCF3E3; border-left: 3px solid #B4790F;
     border-radius: 6px; padding: 10px 14px; font-size: 14px; margin: 10px 0 16px;
 }
+[data-testid="stSidebar"] { display: none; }
+[data-testid="collapsedControl"] { display: none; }
+
+.about-container { text-align: left; padding: 10px 0 25px 0; }
+
+/* ... your other existing rules stay here, unchanged ... */
+
+/* ── Times New Roman everywhere on this page ── */
+html,body,[class*="css"],.stApp,button,input,textarea,select{
+  font-family:'Times New Roman',Times,serif !important;
+}
+.stApp :where(*:not([data-testid="stIconMaterial"]):not(code):not(pre)){
+  font-family:'Times New Roman',Times,serif !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
